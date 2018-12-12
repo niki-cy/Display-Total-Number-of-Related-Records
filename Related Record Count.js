@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    var RELATEDRECORDS = 'Related_Records'; // Field code of the Related Records field
+    var RELATEDRECORDS = 'Related_Records_Filtered'; // Field code of the Related Records field
     var SPACEFIELD = 'Blank_space'; // Element ID of the Space field
  
     // Field codes of the fields set for the Fetch Criteria of the Related Records field
@@ -26,23 +26,28 @@
         // Create query based on the Filter settings for the related records field
         kintone.api(kintone.api.url('/k/v1/app/form/fields',true), 'GET', {
             "app":kintone.app.getId()
-        }, function(resp) {
+        }).then(function(resp) {
             var filter = resp.properties[RELATEDRECORDS].referenceTable.filterCond;
             var keyValue = event.record[FETCH_CRITERIA_A].value;
-            var opt_Field = FETCH_CRITERIA_B + '=' + '"' + keyValue + '" and ' + filter;
-     
-            fetchRecords(opt_Field).then(function(records) {
-                // Insert the total number of records into the Space field
-                var num = records.length;
-                var divTotalAmount = document.createElement('div');
-                divTotalAmount.style.textAlign = 'center';
-                divTotalAmount.style.fontSize = '16px';
-                divTotalAmount.innerHTML = String(num) + ' related sale(s)';
-                kintone.app.record.getSpaceElement(SPACEFIELD).appendChild(divTotalAmount);
-                return event;
-            });
-        }, function(error) {
-            console.log(error);
-        });
+
+            if (filter) {
+                var opt_Field = FETCH_CRITERIA_B + '=' + '"' + keyValue + '" and ' + filter;
+            } else {
+                var opt_Field = FETCH_CRITERIA_B + '=' + '"' + keyValue + '"';
+            };
+            
+            return fetchRecords(opt_Field);
+        }).then(function(records) {
+            // Insert the total number of records into the Space field
+            var num = records.length;
+            var divTotalAmount = document.createElement('div');
+            divTotalAmount.style.textAlign = 'center';
+            divTotalAmount.style.fontSize = '16px';
+            divTotalAmount.innerHTML = String(num) + ' related sale(s)';
+            kintone.app.record.getSpaceElement(SPACEFIELD).appendChild(divTotalAmount);
+            return event;
+        }).catch(function(err){
+            console.log(err)
+        })
     });
 })();
